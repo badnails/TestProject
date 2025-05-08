@@ -1,6 +1,5 @@
 const { Pool } = require('pg');
 
-// Replace these with your actual DB credentials
 const pool = new Pool({
   user: 'postgres.sobpqvuzylwgzljorcsm',
   host: 'aws-0-ap-south-1.pooler.supabase.com',
