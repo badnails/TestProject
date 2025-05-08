@@ -1,6 +1,5 @@
 const express = require('express')
 const pool = require('./pgsample')
-
 const app = express()
 
 app.get('/users', async (req, res) => {
