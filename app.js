@@ -23,7 +23,8 @@ app.use((req, res, next) => {
 app.use("/api", rootRouter);
 app.use("/api/gateway", gatewayRouter);
 
+const port = process.env.PORT || 8080;
 
-app.listen(3000, () => {
-  console.log(`Server running`);
+app.listen(port, () => {
+  console.log(`Server running on ${port}`);
 });
