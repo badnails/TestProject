@@ -2,7 +2,8 @@ import bcrypt from "bcrypt";
 
 export async function get_transaction_details(req, res) {
   try {
-    const trxID = req.headers["transactionid"];
+    const trxID = req.params.id;
+    const expType = req.query.expType;
 
     if (!trxID) {
       return res.status(400).json({
@@ -35,7 +36,7 @@ export async function get_transaction_details(req, res) {
 
     const trx = rows[0];
 
-    if (trx.transactiontypename !== "PAYMENT") {
+    if (trx.transactiontypename !== expType) {
       return res.status(400).json({
         valid: false,
         message: "Invalid transaction type",
@@ -68,8 +69,9 @@ export async function get_transaction_details(req, res) {
 
 export async function validateUser(req, res) {
   try {
-    const username = req.headers["username"];
-    const amount = req.headers["amount"];
+    const username = req.body.username;
+    const amount = req.body.amount;
+
     const text = `
             SELECT availablebalance, accountstatus
             FROM accounts
