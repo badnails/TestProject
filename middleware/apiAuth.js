@@ -3,9 +3,8 @@ import { validate as uuidValidate } from 'uuid';
 export async function apiAuth(req, res, next) {
   try {
     const apikey = req.headers["apikey"];
-    const destAcc = req.body.destAcc;
 
-    if (!apikey || !destAcc) {
+    if (!apikey) {
       return errorHandler(400, { valid: false, message: "Missing API key or destination account" }, res);
     }
 
@@ -26,10 +25,8 @@ export async function apiAuth(req, res, next) {
       const expDate = new Date(keyData.expires_on).toISOString();
       return errorHandler(403, { valid: false, message: `API key expired on ${expDate}` }, res);
     }
-
-    if (destAcc.toString() !== keyData.accountid) {
-      return errorHandler(403, { valid: false, message: "API key does not match destination account" }, res);
-    }
+    
+    req.accountid_from_ak = keyData.accountid;
 
     next();
 

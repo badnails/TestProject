@@ -57,8 +57,8 @@ export async function get_transaction_details(req, res) {
         recipient: trx.accountname,
         subamount: trx.subamount,
         feesamount: trx.feesamount,
-        completed_on: !trx.completiontimestamp?null:trx.completiontimestamp
-      }
+        completed_on: !trx.completiontimestamp ? null : trx.completiontimestamp,
+      },
     });
   } catch (err) {
     console.error("Error fetching transaction details:", err);
@@ -127,7 +127,7 @@ export async function finalizeTransaction(req, res) {
     }
 
     const match = await bcrypt.compare(password, response.rows[0].pinhash);
-    console.log(password+' '+response.rows[0].pinhash+' '+match);
+    console.log(password + " " + response.rows[0].pinhash + " " + match);
     if (match) {
       const final_res = await req.pool.query(
         "SELECT * FROM finalize_transaction($1, $2)",
@@ -139,15 +139,14 @@ export async function finalizeTransaction(req, res) {
           message: "Transaction Failed",
         });
       }
-      
+
       const data = final_res.rows[0].finalize_transaction;
       console.log(data);
 
       res.status(200).json({
         valid: data.valid,
-        message: data.message
-      })
-
+        message: data.message,
+      });
     } else {
       return res.status(403).json({
         valid: false,
@@ -165,19 +164,30 @@ export async function finalizeTransaction(req, res) {
 
 export async function generate_trx_id(req, res) {
   try {
-    const { destAcc, amount } = req.body;
+    const { accountid, amount } = req.body;
+    if (!accountid || !amount)
+      return res.status(400).json({
+        valid: false,
+        message: "AccountID or Amount missing",
+      });
+    if (accountid.toString() !== req.accountid_from_ak.toString()) {
+      return res.status(403).json({
+        valid: false,
+        message: "API key and AccountID don't match",
+      });
+    }
     const query = `SELECT create_transaction($1, $2, $3)`;
-    const result = await req.pool.query(query, [destAcc, 1, amount]);
+    const result = await req.pool.query(query, [accountid, 1, amount]);
     console.log(result.rows[0]);
     return res.status(200).json({
       valid: true,
-      data: result.rows[0].create_transaction
+      data: result.rows[0].create_transaction,
     });
   } catch (error) {
     console.error("Error generating transaction ID:", error);
     return res.status(500).json({
       valid: false,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
     });
   }
 }
