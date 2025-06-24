@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 export async function get_transaction_details(req, res) {
   try {
     const trxID = req.params.id;
-    const expType = req.query.expType;
 
     if (!trxID) {
       return res.status(400).json({
@@ -18,7 +17,8 @@ export async function get_transaction_details(req, res) {
                 a.accountname, 
                 t.subamount, 
                 t.feesamount, 
-                t.transactionstatus 
+                t.transactionstatus,
+                t.completiontimestamp
             FROM transactions t 
             JOIN transactiontype u ON t.transactiontypeid = u.transactiontypeid 
             JOIN accounts a ON t.destinationaccountid = a.accountid 
@@ -36,27 +36,29 @@ export async function get_transaction_details(req, res) {
 
     const trx = rows[0];
 
-    if (trx.transactiontypename !== expType) {
-      return res.status(400).json({
-        valid: false,
-        message: "Invalid transaction type",
-      });
-    }
+    // if (trx.transactiontypename !== expType) {
+    //   return res.status(400).json({
+    //     valid: false,
+    //     message: "Invalid transaction type",
+    //   });
+    // }
 
-    if (trx.transactionstatus === "COMPLETED") {
-      return res.status(400).json({
-        valid: false,
-        message: "Bill has already been paid",
-      });
-    }
+    // if (trx.transactionstatus === "COMPLETED") {
+    //   return res.status(400).json({
+    //     valid: false,
+    //     message: "Bill has already been paid",
+    //   });
+    // }
 
     return res.status(200).json({
       valid: true,
       transactionDetails: {
+        status: trx.transactionstatus,
         recipient: trx.accountname,
         subamount: trx.subamount,
         feesamount: trx.feesamount,
-      },
+        completed_on: !trx.completiontimestamp?null:trx.completiontimestamp
+      }
     });
   } catch (err) {
     console.error("Error fetching transaction details:", err);
@@ -157,6 +159,25 @@ export async function finalizeTransaction(req, res) {
     return res.status(500).json({
       valid: false,
       message: "DB unreachable",
+    });
+  }
+}
+
+export async function generate_trx_id(req, res) {
+  try {
+    const { destAcc, amount } = req.body;
+    const query = `SELECT create_transaction($1, $2, $3)`;
+    const result = await req.pool.query(query, [destAcc, 1, amount]);
+    console.log(result.rows[0]);
+    return res.status(200).json({
+      valid: true,
+      data: result.rows[0].create_transaction
+    });
+  } catch (error) {
+    console.error("Error generating transaction ID:", error);
+    return res.status(500).json({
+      valid: false,
+      message: "Internal Server Error"
     });
   }
 }

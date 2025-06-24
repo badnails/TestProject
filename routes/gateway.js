@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { get_transaction_details, validateUser, finalizeTransaction } from "../controllers/con_gateway.js";
+import {validateUser, finalizeTransaction} from "../controllers/con_gateway.js";
 const router = Router();
 
-router.get('/get-trx-details/:id', get_transaction_details);
+
 router.post('/validate-user', validateUser)
 router.post('/finalize-transaction', finalizeTransaction)
 
