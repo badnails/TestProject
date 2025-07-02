@@ -14,7 +14,7 @@ export async function get_transaction_details(req, res) {
     const query = `
             SELECT 
                 u.transactiontypename, 
-                a.accountname, 
+                a.username, 
                 t.subamount, 
                 t.feesamount, 
                 t.transactionstatus,
@@ -54,7 +54,7 @@ export async function get_transaction_details(req, res) {
       valid: true,
       transactionDetails: {
         status: trx.transactionstatus,
-        recipient: trx.accountname,
+        recipient: trx.username,
         subamount: trx.subamount,
         feesamount: trx.feesamount,
         completed_on: !trx.completiontimestamp ? null : trx.completiontimestamp,
@@ -71,37 +71,20 @@ export async function get_transaction_details(req, res) {
 
 export async function validateUser(req, res) {
   try {
-    const username = req.body.username;
     const amount = req.body.amount;
 
-    const text = `
-            SELECT availablebalance, accountstatus
-            FROM accounts
-            WHERE accountname = $1
-        `;
-    const { rows } = await req.pool.query(text, [username]);
-    if (!rows || rows.length === 0) {
-      return res.status(400).json({
-        valid: false,
-        message: "Invalid Username",
-      });
-    }
-    if (amount > rows[0].availablebalance) {
+    if (amount > req.user.availablebalance) {
       return res.status(403).json({
         valid: false,
         message: "Insufficient Balance",
       });
     }
-    if (rows[0].accountstatus !== "ACTIVE") {
-      return res.status(400).json({
-        valid: false,
-        message: "Account is not active",
-      });
-    }
+
     return res.status(200).json({
       valid: true,
       message: "User Validated",
     });
+
   } catch (error) {
     console.error("User Validation Error", error);
     return res.status(500).json({
@@ -113,10 +96,11 @@ export async function validateUser(req, res) {
 
 export async function finalizeTransaction(req, res) {
   try {
-    const { username, password, transactionid } = req.body;
+    const {password, transactionid} = req.body;
+    console.log(password+' '+transactionid+' '+req.user.accountid);
     const response = await req.pool.query(
-      "SELECT pinhash FROM accounts WHERE accountname=$1",
-      [username]
+      "SELECT pinhash FROM accounts WHERE accountid=$1",
+      [req.user.accountid]
     );
 
     if (response.rows.length === 0) {
@@ -131,7 +115,7 @@ export async function finalizeTransaction(req, res) {
     if (match) {
       const final_res = await req.pool.query(
         "SELECT * FROM finalize_transaction($1, $2)",
-        [transactionid, username]
+        [transactionid, req.user.accountid]
       );
       if (final_res.rows.length === 0) {
         return res.status(404).json({
@@ -164,25 +148,20 @@ export async function finalizeTransaction(req, res) {
 
 export async function generate_trx_id(req, res) {
   try {
-    const { accountid, amount } = req.body;
-    if (!accountid || !amount)
+    const { amount } = req.body;
+    if ( !amount)
       return res.status(400).json({
         valid: false,
-        message: "AccountID or Amount missing",
+        message: "Amount missing",
       });
-    if (accountid.toString() !== req.accountid_from_ak.toString()) {
-      return res.status(403).json({
-        valid: false,
-        message: "API key and AccountID don't match",
-      });
-    }
-    const query = `SELECT create_transaction($1, $2, $3)`;
-    const result = await req.pool.query(query, [accountid, 1, amount]);
+
+    const query = `SELECT create_trx_id($1, $2, $3)`;
+    const result = await req.pool.query(query, [req.user.accountid, 1, amount]);
     console.log(result.rows[0]);
     return res.status(200).json({
       valid: true,
-      data: result.rows[0].create_transaction,
-    });
+      transacitonId: result.rows[0].create_trx_id
+    })
   } catch (error) {
     console.error("Error generating transaction ID:", error);
     return res.status(500).json({

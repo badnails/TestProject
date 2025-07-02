@@ -25,8 +25,18 @@ export async function apiAuth(req, res, next) {
       const expDate = new Date(keyData.expires_on).toISOString();
       return errorHandler(403, { valid: false, message: `API key expired on ${expDate}` }, res);
     }
-    
-    req.accountid_from_ak = keyData.accountid;
+
+    if (req.path.startsWith("/get-trx-details/")) {
+      return next();
+    }
+
+
+    if (req.user.accountid.toString() !== keyData.accountid.toString()) {
+      return res.status(403).json({
+        valid: false,
+        message: "API key and username don't match",
+      });
+    }
 
     next();
 
