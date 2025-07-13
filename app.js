@@ -6,7 +6,11 @@ import gatewayRouter from "./routes/gateway.js";
 import {InfoGetter} from "./middleware/getter.js";
 
 const app = express();
-app.use(cors());
+cors({
+  origin: '*',
+  methods: ['GET', 'POST'],
+});
+
 app.use(express.json());
 
 pool.on('error', (err, client) => {
