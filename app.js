@@ -13,7 +13,7 @@ const corsOptions = {
   credentials: true, // if you send cookies or auth headers
 };
 
-app.use(cors(corsOptions));
+app.use(cors());
 
 app.use(express.json());
 
