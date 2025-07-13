@@ -6,10 +6,14 @@ import gatewayRouter from "./routes/gateway.js";
 import {InfoGetter} from "./middleware/getter.js";
 
 const app = express();
-cors({
-  origin: '*',
-  methods: ['GET', 'POST'],
-});
+const corsOptions = {
+  origin: 'http://127.0.0.1:5173', // your Vite dev server URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'], // add your custom headers if any
+  credentials: true, // if you send cookies or auth headers
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
