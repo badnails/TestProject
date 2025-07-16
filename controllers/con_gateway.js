@@ -163,12 +163,12 @@ export async function generate_trx_id(req, res) {
     if (result.rows[0].create_trx_id.valid) {
       return res.status(200).json({
         valid: true,
-        transacitonid: result.rows[0].create_trx_id.transactionid,
+        transactionid: result.rows[0].create_trx_id.transactionid,
       });
     }else{
       return res.status(200).json({
         valid: false,
-        transacitonid: null,
+        transactionid: null,
         message: "TrxID generation failed"
       });
     }
