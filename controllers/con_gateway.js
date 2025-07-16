@@ -13,14 +13,13 @@ export async function get_transaction_details(req, res) {
 
     const query = `
             SELECT 
-                u.transactiontypename, 
+                t.transactiontypename, 
                 a.username, 
-                t.subamount, 
+                t.subamount,
                 t.feesamount, 
                 t.transactionstatus,
                 t.completiontimestamp
-            FROM transactions t 
-            JOIN transactiontype u ON t.transactiontypeid = u.transactiontypeid 
+            FROM transactions t
             JOIN accounts a ON t.destinationaccountid = a.accountid 
             WHERE t.transactionid = $1
         `;
@@ -156,7 +155,7 @@ export async function generate_trx_id(req, res) {
       });
 
     const query = `SELECT create_trx_id($1, $2, $3)`;
-    const result = await req.pool.query(query, [req.user.accountid, 1, amount]);
+    const result = await req.pool.query(query, [req.user.accountid, "PAYMENT", amount]);
     console.log(result.rows[0]);
     return res.status(200).json({
       valid: true,
