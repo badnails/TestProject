@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 export async function get_transaction_details(req, res) {
   try {
     const trxID = req.params.id;
+    console.log(trxID);
 
     if (!trxID) {
       return res.status(400).json({
@@ -13,7 +14,6 @@ export async function get_transaction_details(req, res) {
 
     const query = `
             SELECT 
-                t.transactiontypename, 
                 a.username, 
                 t.subamount,
                 t.feesamount, 
@@ -83,7 +83,6 @@ export async function validateUser(req, res) {
       valid: true,
       message: "User Validated",
     });
-
   } catch (error) {
     console.error("User Validation Error", error);
     return res.status(500).json({
@@ -95,8 +94,8 @@ export async function validateUser(req, res) {
 
 export async function finalizeTransaction(req, res) {
   try {
-    const {password, transactionid} = req.body;
-    console.log(password+' '+transactionid+' '+req.user.accountid);
+    const { password, transactionid } = req.body;
+    console.log(password + " " + transactionid + " " + req.user.accountid);
     const response = await req.pool.query(
       "SELECT pinhash FROM accounts WHERE accountid=$1",
       [req.user.accountid]
@@ -148,19 +147,31 @@ export async function finalizeTransaction(req, res) {
 export async function generate_trx_id(req, res) {
   try {
     const { amount } = req.body;
-    if ( !amount)
+    if (!amount)
       return res.status(400).json({
         valid: false,
         message: "Amount missing",
       });
 
     const query = `SELECT create_trx_id($1, $2, $3)`;
-    const result = await req.pool.query(query, [req.user.accountid, "PAYMENT", amount]);
+    const result = await req.pool.query(query, [
+      req.user.accountid,
+      "PAYMENT",
+      amount,
+    ]);
     console.log(result.rows[0]);
-    return res.status(200).json({
-      valid: true,
-      transacitonId: result.rows[0].create_trx_id
-    })
+    if (result.rows[0].create_trx_id.valid) {
+      return res.status(200).json({
+        valid: true,
+        transacitonid: result.rows[0].create_trx_id.transactionid,
+      });
+    }else{
+      return res.status(200).json({
+        valid: false,
+        transacitonid: null,
+        message: "TrxID generation failed"
+      });
+    }
   } catch (error) {
     console.error("Error generating transaction ID:", error);
     return res.status(500).json({
